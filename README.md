@@ -75,18 +75,55 @@ Inside the container the server listens on `0.0.0.0:8080` so a published port wo
 
 ## gtfs-mcp
 
-[gtfs-mcp](https://github.com/sohampatwardhan/gtfs-mcp) (binary `gtfs-rt-mcp`) only performs plain GETs. Point it at this proxy. The server reads the `GTFS_RT_MCP_` prefix. Header values are sent on fetch and are not logged.
+[gtfs-mcp](https://github.com/sohampatwardhan/gtfs-mcp) 0.2.0 only performs plain GETs. Point it at this proxy. It reads `GTFS_MCP_STATIC`, `GTFS_MCP_TRIP_UPDATES`, `GTFS_MCP_VEHICLE_POSITIONS`, `GTFS_MCP_ALERTS`, and `GTFS_MCP_HTTP_HEADERS`. There is no `GTFS_RT_MCP_*` alias. Header values are sent on fetch and are not logged.
+
+Install the published package, then run stdio against the proxy:
 
 ```bash
-GTFS_RT_MCP_STATIC=http://127.0.0.1:8080/rail/gtfs.zip \
-GTFS_RT_MCP_TRIP_UPDATES=http://127.0.0.1:8080/rail/trip-updates.pb \
-GTFS_RT_MCP_VEHICLE_POSITIONS=http://127.0.0.1:8080/rail/vehicle-positions.pb \
-GTFS_RT_MCP_ALERTS=http://127.0.0.1:8080/rail/alerts.pb \
-GTFS_RT_MCP_HTTP_HEADERS='{"x-njt-proxy-key":"replace-me"}' \
-gtfs-rt-mcp stdio
+cargo install gtfs-mcp --locked
+# or: npx -y gtfs-mcp --version
+
+GTFS_MCP_STATIC=http://127.0.0.1:8080/rail/gtfs.zip \
+GTFS_MCP_TRIP_UPDATES=http://127.0.0.1:8080/rail/trip-updates.pb \
+GTFS_MCP_VEHICLE_POSITIONS=http://127.0.0.1:8080/rail/vehicle-positions.pb \
+GTFS_MCP_ALERTS=http://127.0.0.1:8080/rail/alerts.pb \
+GTFS_MCP_HTTP_HEADERS='{"x-njt-proxy-key":"replace-me"}' \
+gtfs-mcp stdio
 ```
 
-Omit `GTFS_RT_MCP_HTTP_HEADERS` when `NJT_PROXY_ACCESS_KEY` is unset. Bus feeds use the `/bus/` paths the same way. `replace-me` is not a real key.
+The same variables work with the published image:
+
+```bash
+docker run --rm -p 127.0.0.1:8091:8091 \
+  -e GTFS_MCP_STATIC=http://host.docker.internal:8080/rail/gtfs.zip \
+  -e GTFS_MCP_TRIP_UPDATES=http://host.docker.internal:8080/rail/trip-updates.pb \
+  -e GTFS_MCP_VEHICLE_POSITIONS=http://host.docker.internal:8080/rail/vehicle-positions.pb \
+  -e GTFS_MCP_ALERTS=http://host.docker.internal:8080/rail/alerts.pb \
+  -e GTFS_MCP_HTTP_HEADERS='{"x-njt-proxy-key":"replace-me"}' \
+  ghcr.io/sohampatwardhan/gtfs-mcp:0.2.0
+```
+
+`host.docker.internal` is how the gtfs-mcp container reaches a proxy bound on the host. From a shell on the host, use `127.0.0.1` as in the `gtfs-mcp stdio` example. Omit `GTFS_MCP_HTTP_HEADERS` when `NJT_PROXY_ACCESS_KEY` is unset. Bus feeds use the `/bus/` paths the same way. `replace-me` is not a real key.
+
+Cursor, Claude Desktop, or Claude Code can launch it with npx:
+
+```json
+{
+  "mcpServers": {
+    "gtfs": {
+      "command": "npx",
+      "args": ["-y", "gtfs-mcp", "stdio"],
+      "env": {
+        "GTFS_MCP_STATIC": "http://127.0.0.1:8080/rail/gtfs.zip",
+        "GTFS_MCP_TRIP_UPDATES": "http://127.0.0.1:8080/rail/trip-updates.pb",
+        "GTFS_MCP_VEHICLE_POSITIONS": "http://127.0.0.1:8080/rail/vehicle-positions.pb",
+        "GTFS_MCP_ALERTS": "http://127.0.0.1:8080/rail/alerts.pb",
+        "GTFS_MCP_HTTP_HEADERS": "{\"x-njt-proxy-key\":\"replace-me\"}"
+      }
+    }
+  }
+}
+```
 
 ## Layout
 

@@ -18,7 +18,7 @@ use crate::cache::FeedCache;
 
 /// Header clients must send when `NJT_PROXY_ACCESS_KEY` is set.
 ///
-/// gtfs-mcp can send it with `GTFS_RT_MCP_HTTP_HEADERS`.
+/// gtfs-mcp 0.2.0 can send it with `GTFS_MCP_HTTP_HEADERS`.
 pub const ACCESS_KEY_HEADER: &str = "x-njt-proxy-key";
 
 /// Router state. Cheap to clone because the clients and cache are reference-counted.
