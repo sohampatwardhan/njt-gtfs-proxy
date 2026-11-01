@@ -1,0 +1,2 @@
+# Apply documentation lints to private items as well as public ones.
+check-private-items = true

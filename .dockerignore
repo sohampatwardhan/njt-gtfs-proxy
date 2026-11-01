@@ -1,0 +1,8 @@
+target
+**/target
+.git
+**/*.pdf
+*.token-cache.json
+token-cache.json
+.env
+.env.*

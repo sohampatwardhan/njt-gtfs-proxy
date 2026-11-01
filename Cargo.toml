@@ -1,0 +1,11 @@
+[workspace]
+resolver = "2"
+members = ["crates/njt-client", "crates/njt-gtfs-proxy"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+rust-version = "1.85"
+authors = ["Soham Patwardhan"]
+repository = "https://github.com/sohampatwardhan/njt-gtfs-proxy"
