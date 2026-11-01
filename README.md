@@ -75,42 +75,29 @@ Inside the container the server listens on `0.0.0.0:8080` so a published port wo
 
 ## gtfs-mcp
 
-[gtfs-mcp](https://github.com/sohampatwardhan/gtfs-mcp) 0.2.0 only performs plain GETs. Point it at this proxy. It reads `GTFS_MCP_STATIC`, `GTFS_MCP_TRIP_UPDATES`, `GTFS_MCP_VEHICLE_POSITIONS`, `GTFS_MCP_ALERTS`, and `GTFS_MCP_HTTP_HEADERS`. There is no `GTFS_RT_MCP_*` alias. Header values are sent on fetch and are not logged.
+[gtfs-mcp](https://github.com/sohampatwardhan/gtfs-mcp) [0.3.0](https://www.npmjs.com/package/gtfs-mcp) only performs plain GETs. Point it at this proxy. It reads `GTFS_MCP_STATIC`, `GTFS_MCP_TRIP_UPDATES`, `GTFS_MCP_VEHICLE_POSITIONS`, `GTFS_MCP_ALERTS`, and `GTFS_MCP_HTTP_HEADERS`. There is no `GTFS_RT_MCP_*` alias. Header values are sent on fetch and are not logged. One process registers one feed at startup, so rail and bus are two servers.
 
-Install the published package, then run stdio against the proxy:
+Install with `npx -y gtfs-mcp` or `cargo install gtfs-mcp --locked`, then run stdio against the proxy:
 
 ```bash
-cargo install gtfs-mcp --locked
-# or: npx -y gtfs-mcp --version
-
 GTFS_MCP_STATIC=http://127.0.0.1:8080/rail/gtfs.zip \
 GTFS_MCP_TRIP_UPDATES=http://127.0.0.1:8080/rail/trip-updates.pb \
 GTFS_MCP_VEHICLE_POSITIONS=http://127.0.0.1:8080/rail/vehicle-positions.pb \
 GTFS_MCP_ALERTS=http://127.0.0.1:8080/rail/alerts.pb \
 GTFS_MCP_HTTP_HEADERS='{"x-njt-proxy-key":"replace-me"}' \
-gtfs-mcp stdio
+npx -y gtfs-mcp stdio
 ```
 
-The same variables work with the published image:
+Bus uses the `/bus/` paths in the same variables. Omit `GTFS_MCP_HTTP_HEADERS` when `NJT_PROXY_ACCESS_KEY` is unset. `replace-me` is not a real key.
 
-```bash
-docker run --rm -p 127.0.0.1:8091:8091 \
-  -e GTFS_MCP_STATIC=http://host.docker.internal:8080/rail/gtfs.zip \
-  -e GTFS_MCP_TRIP_UPDATES=http://host.docker.internal:8080/rail/trip-updates.pb \
-  -e GTFS_MCP_VEHICLE_POSITIONS=http://host.docker.internal:8080/rail/vehicle-positions.pb \
-  -e GTFS_MCP_ALERTS=http://host.docker.internal:8080/rail/alerts.pb \
-  -e GTFS_MCP_HTTP_HEADERS='{"x-njt-proxy-key":"replace-me"}' \
-  ghcr.io/sohampatwardhan/gtfs-mcp:0.2.0
-```
+### Claude Desktop and Cursor
 
-`host.docker.internal` is how the gtfs-mcp container reaches a proxy bound on the host. From a shell on the host, use `127.0.0.1` as in the `gtfs-mcp stdio` example. Omit `GTFS_MCP_HTTP_HEADERS` when `NJT_PROXY_ACCESS_KEY` is unset. Bus feeds use the `/bus/` paths the same way. `replace-me` is not a real key.
-
-Cursor, Claude Desktop, or Claude Code can launch it with npx:
+`claude_desktop_config.json` and `.cursor/mcp.json` share this `mcpServers` object:
 
 ```json
 {
   "mcpServers": {
-    "gtfs": {
+    "gtfs-njt-rail": {
       "command": "npx",
       "args": ["-y", "gtfs-mcp", "stdio"],
       "env": {
@@ -120,9 +107,103 @@ Cursor, Claude Desktop, or Claude Code can launch it with npx:
         "GTFS_MCP_ALERTS": "http://127.0.0.1:8080/rail/alerts.pb",
         "GTFS_MCP_HTTP_HEADERS": "{\"x-njt-proxy-key\":\"replace-me\"}"
       }
+    },
+    "gtfs-njt-bus": {
+      "command": "npx",
+      "args": ["-y", "gtfs-mcp", "stdio"],
+      "env": {
+        "GTFS_MCP_STATIC": "http://127.0.0.1:8080/bus/gtfs.zip",
+        "GTFS_MCP_TRIP_UPDATES": "http://127.0.0.1:8080/bus/trip-updates.pb",
+        "GTFS_MCP_VEHICLE_POSITIONS": "http://127.0.0.1:8080/bus/vehicle-positions.pb",
+        "GTFS_MCP_ALERTS": "http://127.0.0.1:8080/bus/alerts.pb",
+        "GTFS_MCP_HTTP_HEADERS": "{\"x-njt-proxy-key\":\"replace-me\"}"
+      }
     }
   }
 }
+```
+
+### VS Code
+
+`.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "gtfs-njt-rail": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "gtfs-mcp", "stdio"],
+      "env": {
+        "GTFS_MCP_STATIC": "http://127.0.0.1:8080/rail/gtfs.zip",
+        "GTFS_MCP_TRIP_UPDATES": "http://127.0.0.1:8080/rail/trip-updates.pb",
+        "GTFS_MCP_VEHICLE_POSITIONS": "http://127.0.0.1:8080/rail/vehicle-positions.pb",
+        "GTFS_MCP_ALERTS": "http://127.0.0.1:8080/rail/alerts.pb",
+        "GTFS_MCP_HTTP_HEADERS": "{\"x-njt-proxy-key\":\"replace-me\"}"
+      }
+    },
+    "gtfs-njt-bus": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "gtfs-mcp", "stdio"],
+      "env": {
+        "GTFS_MCP_STATIC": "http://127.0.0.1:8080/bus/gtfs.zip",
+        "GTFS_MCP_TRIP_UPDATES": "http://127.0.0.1:8080/bus/trip-updates.pb",
+        "GTFS_MCP_VEHICLE_POSITIONS": "http://127.0.0.1:8080/bus/vehicle-positions.pb",
+        "GTFS_MCP_ALERTS": "http://127.0.0.1:8080/bus/alerts.pb",
+        "GTFS_MCP_HTTP_HEADERS": "{\"x-njt-proxy-key\":\"replace-me\"}"
+      }
+    }
+  }
+}
+```
+
+### Claude Code
+
+```bash
+claude mcp add gtfs-njt-rail \
+  -e GTFS_MCP_STATIC=http://127.0.0.1:8080/rail/gtfs.zip \
+  -e GTFS_MCP_TRIP_UPDATES=http://127.0.0.1:8080/rail/trip-updates.pb \
+  -e GTFS_MCP_VEHICLE_POSITIONS=http://127.0.0.1:8080/rail/vehicle-positions.pb \
+  -e GTFS_MCP_ALERTS=http://127.0.0.1:8080/rail/alerts.pb \
+  -e GTFS_MCP_HTTP_HEADERS='{"x-njt-proxy-key":"replace-me"}' \
+  -- npx -y gtfs-mcp stdio
+
+claude mcp add gtfs-njt-bus \
+  -e GTFS_MCP_STATIC=http://127.0.0.1:8080/bus/gtfs.zip \
+  -e GTFS_MCP_TRIP_UPDATES=http://127.0.0.1:8080/bus/trip-updates.pb \
+  -e GTFS_MCP_VEHICLE_POSITIONS=http://127.0.0.1:8080/bus/vehicle-positions.pb \
+  -e GTFS_MCP_ALERTS=http://127.0.0.1:8080/bus/alerts.pb \
+  -e GTFS_MCP_HTTP_HEADERS='{"x-njt-proxy-key":"replace-me"}' \
+  -- npx -y gtfs-mcp stdio
+```
+
+### Codex
+
+`~/.codex/config.toml`:
+
+```toml
+[mcp_servers.gtfs-njt-rail]
+command = "npx"
+args = ["-y", "gtfs-mcp", "stdio"]
+
+[mcp_servers.gtfs-njt-rail.env]
+GTFS_MCP_STATIC = "http://127.0.0.1:8080/rail/gtfs.zip"
+GTFS_MCP_TRIP_UPDATES = "http://127.0.0.1:8080/rail/trip-updates.pb"
+GTFS_MCP_VEHICLE_POSITIONS = "http://127.0.0.1:8080/rail/vehicle-positions.pb"
+GTFS_MCP_ALERTS = "http://127.0.0.1:8080/rail/alerts.pb"
+GTFS_MCP_HTTP_HEADERS = "{\"x-njt-proxy-key\":\"replace-me\"}"
+
+[mcp_servers.gtfs-njt-bus]
+command = "npx"
+args = ["-y", "gtfs-mcp", "stdio"]
+
+[mcp_servers.gtfs-njt-bus.env]
+GTFS_MCP_STATIC = "http://127.0.0.1:8080/bus/gtfs.zip"
+GTFS_MCP_TRIP_UPDATES = "http://127.0.0.1:8080/bus/trip-updates.pb"
+GTFS_MCP_VEHICLE_POSITIONS = "http://127.0.0.1:8080/bus/vehicle-positions.pb"
+GTFS_MCP_ALERTS = "http://127.0.0.1:8080/bus/alerts.pb"
+GTFS_MCP_HTTP_HEADERS = "{\"x-njt-proxy-key\":\"replace-me\"}"
 ```
 
 ## Layout
